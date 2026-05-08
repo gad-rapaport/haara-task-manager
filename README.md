@@ -12,99 +12,100 @@ An end-to-end Minimal Viable Product (MVP) for extracting and managing tasks fro
 --------
 מוצר מינימלי מלא לניהול משימות המופקות מתוך סיכומי יום. פותח למטרת משימת בית עבור חברת "הארה" ומתמקד בממשק מינימליסטי (RTL), זרימת נתונים חלקה ומנגנון השהייה למשימות.
 
-Tech Stack / טכנולוגיות
-----------------------
-- Frontend: React (Vite) + Tailwind CSS (RTL support)
-- Backend: Python + FastAPI
-- Storage: file-based JSON (`db.json`) for simple local testing
-- Parsing: lightweight mock parsing on the backend to extract tasks from text
+# 💡 מערכת ניהול משימות - הארה (MVP)
 
-תשתית טכנולוגית
-----------------
-- פרונטאנד: React (Vite) + Tailwind CSS (תמיכה ב-RTL)
-- בקאנד: Python + FastAPI
-- אחסון: קובץ JSON (`db.json`) לנוחות ובדיקות מקומיות
-- ניתוח טקסט: מימוש Mock בשרת לצורך חיתוך משימות מטקסט
+מערכת חכמה ומינימליסטית לניהול משימות מתוך סיכומי יום, שפותחה כמענה למשימת הבית של חברת הארה. המערכת מתמקדת בחוויית משתמש נקייה, זרימת נתונים חלקה, ועמידה מלאה בדרישות הליבה (כולל מנגנון הסטטוס "בהשהייה").
 
-Features / תכונות מרכזיות
---------------------------
-- Create / read / update / pause tasks
-- Parse tasks from plain-text daily summaries (mock)
-- RTL-ready UI with minimal design
+---
 
-פיצ'רים
--------
-- יצירה / קריאה / עדכון / השהיית משימות
-- חיתוך משימות מטקסט חופשי של סיכומי יום (מימוש Mock)
-- ממשק RTL נקי ופשוט
+## 🛠️ טכנולוגיות (Tech Stack)
 
-Quick Start — Run Locally / הפעלה מקומית מהירה
--------------------------------------------
+* **צד לקוח (Frontend):** React (Vite), Tailwind CSS, Lucide Icons.
+* **צד שרת (Backend):** Python 3.10+, FastAPI, Uvicorn, Pydantic.
+* **בינה מלאכותית (AI Engine):** Google Gemini (`gemini-1.5-flash`) באמצעות `google-generativeai` SDK.
+* **מסד נתונים (Database):** JSON File-based storage (מותאם ל-MVP).
 
-Backend (FastAPI)
+---
 
-1. Open a terminal and change to the backend folder:
+## 🏗️ ארכיטקטורה והחלטות טכניות
 
-```powershell
+* **FastAPI בשרת:** נבחר בזכות המהירות, התיעוד האוטומטי, ויכולות הולידציה המובנות.
+* **מסד נתונים מקומי:** החלטה זו התקבלה כדי לאפשר הרצה חלקה ומיידית של ה-MVP ללא צורך בהגדרת שרתי מסדי נתונים מורכבים מצד הבוחן.
+* **ממשק משתמש:** פיתוח רספונסיבי עם עיצוב מבוסס Tailwind ליצירת ממשק נקי ותמיכה מלאה ב-RTL (ימין לשמאל).
+* **מנגנון סינון:** הסינון (לפי סטטוס ואחראי) מתבצע כולו בצד השרת כדי להבטיח ביצועים אופטימליים, ומאפשר איתור של משימות גם כשהן בסטטוס "בהשהייה".
+
+### 🧠 שילוב בינה מלאכותית (LLM Integration)
+כמענה לדרישת הבונוס, שולב מודל LLM אמיתי לפענוח הסיכומים:
+* המערכת מחוברת למודל `gemini-2.5-flash` של גוגל, אשר מנתח את טקסט הסיכום החופשי, מזהה את המשימות, ומחזיר אובייקטים מובנים (JSON) עם זיהוי אוטומטי של: כותרת, תיאור, אחראי (Owner) ורמת דחיפות/חשיבות.
+* **Graceful Fallback:** הארכיטקטורה נבנתה בצורה חסינה. במידה ולא מוגדר מפתח API (או שקיימת בעיית רשת), המערכת מזהה זאת ונופלת אוטומטית למנגנון גיבוי מקומי (Regex Parser) המזהה שורות טקסט הכוללות את המילה "משימה:".
+
+---
+
+## 🚀 הוראות הרצה
+
+### 1. הפעלת השרת (Backend)
+פתח חלון טרמינל, נווט לתיקיית הפרויקט והרץ את הפקודות הבאות לפי הסדר:
+
+```bash
 cd backend
-```
-
-2. Create and activate a virtual environment:
-
-```powershell
 python -m venv venv
-.\venv\Scripts\activate    # Windows
-# source venv/bin/activate  # macOS / Linux
-```
+# Windows:
+.\venv\Scripts\activate
+# Mac/Linux:
+source venv/bin/activate
 
-3. Install Python dependencies:
-
-```powershell
 pip install -r requirements.txt
 ```
 
-4. Run the development server:
+**הגדרת AI (אופציונלי אך מומלץ):**
+ליכולות פענוח טקסט מתקדמות, צור קובץ `.env` בתוך תיקיית `backend` והוסף את מפתח ה-API שלך:
 
-```powershell
-uvicorn main:app --reload
+```env
+GEMINI_API_KEY=your_api_key_here
 ```
 
-The backend will be available at: http://localhost:8000
+**הרצת השרת:**
 
-Frontend (React + Vite)
+```bash
+python -m uvicorn main:app --reload
+```
 
-1. Open a new terminal and change to the frontend folder:
+*השרת ירוץ על הכתובת http://localhost:8000*
+
+### 2. הפעלת צד הלקוח (Frontend)
+פתח חלון טרמינל חדש, נווט לתיקיית הפרויקט והרץ:
 
 ```bash
 cd frontend
-```
-
-2. Install Node dependencies and start the dev server:
-
-```bash
 npm install
 npm run dev
 ```
 
-The frontend typically runs at: http://localhost:5173
+*האפליקציה תרוץ על הכתובת http://localhost:5173*
 
-מדריך הפעלה מהירה — בקצרה
+---
 
-בקאנד (FastAPI)
+## 🤖 הצהרת שימוש בבינה מלאכותית (AI Pair Programming)
+בהתאם להנחיות המשימה, הפרויקט פותח תוך היעזרות בבינה מלאכותית ששימשה כשותף פיתוח (AI Pair Programmer):
 
-```powershell
-cd backend
-python -m venv venv
-.\venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn main:app --reload
-```
+**היכן נעשה שימוש:** יצירת מבנה הקבצים הראשוני, הגדרות התצורה של סביבת העיצוב (Tailwind), פתרון שגיאות התקנה בסביבות הווירטואליות וכתיבת קוד ה-Boilerplate לראוטים של ה-API.
 
-פרונטאנד (React)
+**החלטות עצמאיות שלי:** אפיון מבנה הנתונים בשרת, ארכיטקטורת ה-Fallback לניתוב הטקסט, לוגיקת הסינונים ובניית השאילתות, ניהול המצבים (State) בצד הלקוח, ועיצוב חוויית המשתמש והאינטראקציות.
 
-```bash
-cd frontend
-npm install
+---
+
+## ✅ עמידה בדרישות המשימה
+
+- [x] ממשק מלא בעברית כולל תמיכה מלאה ב-RTL ועיצוב נקי.
+
+- [x] יצירת משימות מתוך סיכום יומי באמצעות חיבור אמיתי ל-LLM.
+
+- [x] סינון דינמי לפי סטטוס ואחראי (מבוצע צד-שרת).
+
+- [x] מנגנון "השהייה" - משימות אינן נמחקות ונשארות זמינות בסינון.
+
+- [x] ולידציות נתונים בצד השרת (Pydantic) ובצד הלקוח.
+
 npm run dev
 ```
 
