@@ -1,0 +1,27 @@
+{
+  "summaries": [
+    {
+      "id": "cdba3f73-a7b2-4b86-99cf-62b644b485a8",
+      "date": "2026-05-08",
+      "content": "היום דיברנו על הצעת מחיר. משימה: דני לבדוק מלאי דימרים.\"",
+      "createdAt": "2026-05-08T13:32:53.489988",
+      "updatedAt": "2026-05-08T13:32:53.490092"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "9e6cdce1-c08e-4c42-9203-916bd0b303e0",
+      "title": "טיפול בלקוח מהסיכום",
+      "description": "משימה שנוצרה אוטומטית",
+      "owner": "גדי",
+      "currentHandler": "",
+      "urgency": "medium",
+      "importance": "high",
+      "effort": "small",
+      "status": "paused",
+      "summaryId": "cdba3f73-a7b2-4b86-99cf-62b644b485a8",
+      "createdAt": "2026-05-08T13:32:53.490106",
+      "updatedAt": "2026-05-08T13:36:55.196552"
+    }
+  ]
+}
