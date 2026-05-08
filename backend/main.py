@@ -5,7 +5,13 @@ from typing import List, Optional
 import json
 import os
 import uuid
+import re
 from datetime import datetime
+import google.generativeai as genai
+from dotenv import load_dotenv
+
+# טעינת משתני הסביבה (API KEY)
+load_dotenv()
 
 app = FastAPI()
 
@@ -18,6 +24,10 @@ app.add_middleware(
 )
 
 DB_FILE = "db.json"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
 
 def load_db():
     if not os.path.exists(DB_FILE):
@@ -70,15 +80,71 @@ def create_summary(summary: SummaryCreate):
     }
     db["summaries"].append(new_summary)
     
-    # Mock Parser: יוצר שתי משימות אוטומטית כפי שנדרש בבונוס/Mock
-    mock_task_1 = {
-        "id": str(uuid.uuid4()), "title": "טיפול בלקוח מהסיכום", "description": "משימה שנוצרה אוטומטית",
-        "owner": "גדי", "currentHandler": "", "urgency": "medium", "importance": "high",
-        "effort": "small", "status": "open", "summaryId": new_summary["id"],
-        "createdAt": datetime.now().isoformat(), "updatedAt": datetime.now().isoformat()
-    }
-    db["tasks"].append(mock_task_1)
-    
+    tasks_created = False
+
+    # 1. ניסיון פענוח באמצעות AI (אם יש מפתח זמין)
+    if GEMINI_API_KEY:
+        try:
+            model = genai.GenerativeModel('gemini-2.5-flash')
+            prompt = f"""
+            You are a smart assistant for an Israeli company. 
+            Read the following daily summary in Hebrew. Extract all action items/tasks.
+            Return ONLY a valid JSON array of objects. Do not include markdown formatting like ```json.
+            Each object must have these exact keys:
+            "title" (string, short action title),
+            "description" (string, full context),
+            "owner" (string, extract the responsible person's name or return "לא מוגדר"),
+            "urgency" (string, choose: "low", "medium", "high"),
+            "importance" (string, choose: "low", "medium", "high")
+
+            Summary: {summary.content}
+            """
+            response = model.generate_content(prompt)
+            raw_text = response.text.strip().removeprefix("```json").removesuffix("```").strip()
+            ai_tasks = json.loads(raw_text)
+
+            for at in ai_tasks:
+                new_task = {
+                    "id": str(uuid.uuid4()),
+                    "title": at.get("title", "משימה חדשה"),
+                    "description": at.get("description", ""),
+                    "owner": at.get("owner", "לא מוגדר"),
+                    "currentHandler": "",
+                    "urgency": at.get("urgency", "medium"),
+                    "importance": at.get("importance", "medium"),
+                    "effort": "medium",
+                    "status": "open",
+                    "summaryId": new_summary["id"],
+                    "createdAt": datetime.now().isoformat(),
+                    "updatedAt": datetime.now().isoformat()
+                }
+                db["tasks"].append(new_task)
+                tasks_created = True
+        except Exception as e:
+            print(f"AI Parse Failed, falling back to Regex: {e}")
+
+    # 2. גיבוי (Fallback) - אם אין AI או שה-API נפל, מנתח טקסט טיפש
+    if not tasks_created:
+        lines = re.split(r'[.\n]', summary.content)
+        for line in lines:
+            if "משימה:" in line or "לביצוע:" in line:
+                new_task = {
+                    "id": str(uuid.uuid4()),
+                    "title": line.strip()[:40],
+                    "description": line.strip(),
+                    "owner": "לא מוגדר",
+                    "currentHandler": "",
+                    "urgency": "medium",
+                    "importance": "high",
+                    "effort": "small",
+                    "status": "open",
+                    "summaryId": new_summary["id"],
+                    "createdAt": datetime.now().isoformat(),
+                    "updatedAt": datetime.now().isoformat()
+                }
+                db["tasks"].append(new_task)
+                tasks_created = True
+
     save_db(db)
     return new_summary
 
@@ -93,6 +159,14 @@ def get_tasks(owner: Optional[str] = None, currentHandler: Optional[str] = None,
     if status:
         tasks = [t for t in tasks if t.get("status") == status]
     return tasks
+
+@app.get("/api/tasks/{task_id}")
+def get_task(task_id: str):
+    db = load_db()
+    for t in db["tasks"]:
+        if t["id"] == task_id:
+            return t
+    raise HTTPException(status_code=404, detail="Task not found")
 
 @app.post("/api/tasks")
 def create_task(task: TaskCreate):
@@ -114,13 +188,6 @@ def update_task(task_id: str, task_update: TaskUpdate):
             t.update(update_data)
             t["updatedAt"] = datetime.now().isoformat()
             save_db(db)
-            return t
-    raise HTTPException(status_code=404, detail="Task not found")
-@app.get("/api/tasks/{task_id}")
-def get_task(task_id: str):
-    db = load_db()
-    for t in db["tasks"]:
-        if t["id"] == task_id:
             return t
     raise HTTPException(status_code=404, detail="Task not found")
 
