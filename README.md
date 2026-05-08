@@ -1,162 +1,325 @@
-# Haara Task Manager — MVP
+# 💡 מערכת ניהול משימות - הארה
 
-English / עברית
+<div align="center">
 
----
+**מערכת חכמה ומינימליסטית לניהול משימות מתוך סיכומי יום**
 
-Overview
---------
-An end-to-end Minimal Viable Product (MVP) for extracting and managing tasks from daily summaries. Built as a take-home assignment for Haara, the app focuses on a minimalist RTL UI, smooth data flow, and a pause/snooze task mechanism.
+[English](#english) • [עברית](#hebrew)
 
-מבט כללי
---------
-מוצר מינימלי מלא לניהול משימות המופקות מתוך סיכומי יום. פותח למטרת משימת בית עבור חברת "הארה" ומתמקד בממשק מינימליסטי (RTL), זרימת נתונים חלקה ומנגנון השהייה למשימות.
-
-# 💡 מערכת ניהול משימות - הארה (MVP)
-
-מערכת חכמה ומינימליסטית לניהול משימות מתוך סיכומי יום, שפותחה כמענה למשימת הבית של חברת הארה. המערכת מתמקדת בחוויית משתמש נקייה, זרימת נתונים חלקה, ועמידה מלאה בדרישות הליבה (כולל מנגנון הסטטוס "בהשהייה").
+</div>
 
 ---
 
-## 🛠️ טכנולוגיות (Tech Stack)
+## <a name="hebrew"></a>🇮🇱 עברית
 
-* **צד לקוח (Frontend):** React (Vite), Tailwind CSS, Lucide Icons.
-* **צד שרת (Backend):** Python 3.10+, FastAPI, Uvicorn, Pydantic.
-* **בינה מלאכותית (AI Engine):** Google Gemini (`gemini-2.5-flash`) באמצעות `google-generativeai` SDK.
-* **מסד נתונים (Database):** JSON File-based storage (מותאם ל-MVP).
+### 📋 סקירה כללית
 
----
+מערכת ניהול משימות **MVP** מלאה, שפותחה כמענה למשימת בית של חברת הארה. המערכת מאפשרת:
 
-## 🏗️ ארכיטקטורה והחלטות טכניות
-
-* **FastAPI בשרת:** נבחר בזכות המהירות, התיעוד האוטומטי, ויכולות הולידציה המובנות.
-* **מסד נתונים מקומי:** החלטה זו התקבלה כדי לאפשר הרצה חלקה ומיידית של ה-MVP ללא צורך בהגדרת שרתי מסדי נתונים מורכבים מצד הבוחן.
-* **ממשק משתמש:** פיתוח רספונסיבי עם עיצוב מבוסס Tailwind ליצירת ממשק נקי ותמיכה מלאה ב-RTL (ימין לשמאל).
-* **מנגנון סינון:** הסינון (לפי סטטוס ואחראי) מתבצע כולו בצד השרת כדי להבטיח ביצועים אופטימליים, ומאפשר איתור של משימות גם כשהן בסטטוס "בהשהייה".
-
-### 🧠 שילוב בינה מלאכותית (LLM Integration)
-כמענה לדרישת הבונוס, שולב מודל LLM אמיתי לפענוח הסיכומים:
-* המערכת מחוברת למודל `gemini-2.5-flash` של גוגל, אשר מנתח את טקסט הסיכום החופשי, מזהה את המשימות, ומחזיר אובייקטים מובנים (JSON) עם זיהוי אוטומטי של: כותרת, תיאור, אחראי (Owner) ורמת דחיפות/חשיבות.
-* **Graceful Fallback:** הארכיטקטורה נבנתה בצורה חסינה. במידה ולא מוגדר מפתח API (או שקיימת בעיית רשת), המערכת מזהה זאת ונופלת אוטומטית למנגנון גיבוי מקומי (Regex Parser) המזהה שורות טקסט הכוללות את המילה "משימה:".
+- ✨ **חילוץ אוטומטי של משימות** מתוך סיכומי יום בעברית
+- 🎯 **סינון דינמי** לפי סטטוס ואחראי
+- ⏸️ **מנגנון השהייה** לניהול מטלות
+- 🌍 **ממשק RTL מלא** בעברית
 
 ---
 
-## 🚀 הוראות הרצה
+### 🛠️ טכנולוגיות (Tech Stack)
 
-### 1. הפעלת השרת (Backend)
-פתח חלון טרמינל, נווט לתיקיית הפרויקט והרץ את הפקודות הבאות לפי הסדר:
+| קומפוננטה | טכנולוגיה |
+|---|---|
+| **Frontend** | React 18 + Vite + Tailwind CSS + Lucide Icons |
+| **Backend** | Python 3.10+ + FastAPI + Uvicorn |
+| **AI Engine** | Google Gemini (gemini-2.5-flash) |
+| **Database** | JSON File-based Storage |
+
+---
+
+### 🏗️ ארכיטקטורה וחלטות טכניות
+
+#### 🔧 בחירת FastAPI
+- ⚡ ביצועים גבוהים עם תמיכה async
+- 📚 תיעוד אוטומטי (Swagger UI)
+- ✅ ולידציה מובנית עם Pydantic
+
+#### 💾 מסד נתונים מקומי
+- 🚀 הרצה מיידית ללא הגדרות מורכבות
+- 📁 שמירה פשוטה ל-JSON
+
+#### 🎨 עיצוב ממשק
+- 📱 רספונסיבי עם Tailwind CSS
+- ↔️ תמיכה מלאה RTL (ימין לשמאל)
+- 🧹 ממשק נקי ומינימליסטי
+
+#### 🧠 שילוב LLM
+- **מודל:** Google Gemini 2.5 Flash
+- **פעולה:** ניתוח אוטומטי של סיכומים וחילוץ משימות
+- **fallback חכם:** אם API לא זמין, המערכת עדיין פעילה עם הודעות ברורות
+
+---
+
+### 🚀 הוראות התקנה והרצה
+
+#### 1️⃣ Backend Setup
 
 ```bash
 cd backend
+
+# יצירת סביבה וירטואלית
 python -m venv venv
+
+# הפעלה
 # Windows:
 .\venv\Scripts\activate
 # Mac/Linux:
 source venv/bin/activate
 
+# התקנת תלויות
 pip install -r requirements.txt
 ```
 
-**הגדרת AI (אופציונלי אך מומלץ):**
-ליכולות פענוח טקסט מתקדמות, צור קובץ `.env` בתוך תיקיית `backend` והוסף את מפתח ה-API שלך:
+#### 🔑 הגדרת API (אופציונלי)
+
+לשימוש בבינה המלאכותית, צור קובץ `.env` בתוך `backend/`:
 
 ```env
 GEMINI_API_KEY=your_api_key_here
 ```
 
-**הרצת השרת:**
+#### ▶️ הרצת השרת
 
 ```bash
 python -m uvicorn main:app --reload
 ```
 
-*השרת ירוץ על הכתובת http://localhost:8000*
+🌐 השרת יפעל ב: **http://localhost:8000**
 
-### 2. הפעלת צד הלקוח (Frontend)
-פתח חלון טרמינל חדש, נווט לתיקיית הפרויקט והרץ:
+---
+
+#### 2️⃣ Frontend Setup
 
 ```bash
 cd frontend
+
+# התקנת dependencies
 npm install
+
+# הרצה בדוקומנטציה
 npm run dev
 ```
 
-*האפליקציה תרוץ על הכתובת http://localhost:5173*
+🌐 האפליקציה תפעל ב: **http://localhost:5173**
 
 ---
 
-## 🤖 הצהרת שימוש בבינה מלאכותית (AI Pair Programming)
-בהתאם להנחיות המשימה, הפרויקט פותח תוך היעזרות בבינה מלאכותית ששימשה כשותף פיתוח (AI Pair Programmer):
+### 📡 API Endpoints
 
-**היכן נעשה שימוש:** יצירת מבנה הקבצים הראשוני, הגדרות התצורה של סביבת העיצוב (Tailwind), פתרון שגיאות התקנה בסביבות הווירטואליות וכתיבת קוד ה-Boilerplate לראוטים של ה-API.
-
-**החלטות עצמאיות שלי:** אפיון מבנה הנתונים בשרת, ארכיטקטורת ה-Fallback לניתוב הטקסט, לוגיקת הסינונים ובניית השאילתות, ניהול המצבים (State) בצד הלקוח, ועיצוב חוויית המשתמש והאינטראקציות.
+| Method | Endpoint | תיאור |
+|--------|----------|-------|
+| `GET` | `/tasks` | רשימת כל המשימות |
+| `POST` | `/tasks` | יצירת משימה חדשה |
+| `PATCH` | `/tasks/{id}` | עדכון משימה (כולל השהייה) |
+| `POST` | `/parse` | ניתוח סיכום יום וחילוץ משימות |
 
 ---
 
-## ✅ עמידה בדרישות המשימה
+### 🤖 הצהרת שימוש בבינה מלאכותית
 
-- [x] ממשק מלא בעברית כולל תמיכה מלאה ב-RTL ועיצוב נקי.
+**בהתאם להנחיות המשימה**, פרויקט זה פותח עם סיוע AI כשותף פיתוח:
 
-- [x] יצירת משימות מתוך סיכום יומי באמצעות חיבור אמיתי ל-LLM.
+#### 🤝 שימוש בـ AI:
+- יצירת מבנה הפרויקט הראשוני
+- הגדרות Tailwind וסביבת עיצוב
+- פתרון בעיות התקנה וקונפיגורציה
 
-- [x] סינון דינמי לפי סטטוס ואחראי (מבוצע צד-שרת).
+#### 🧠 החלטות עצמאיות:
+- ✅ אפיון מבנה הנתונים
+- ✅ ארכיטקטורת fallback חכמה
+- ✅ לוגיקת סינון משודרגת
+- ✅ בניית השאילתות ל-LLM
 
-- [x] מנגנון "השהייה" - משימות אינן נמחקות ונשארות זמינות בסינון.
+---
 
-- [x] ולידציות נתונים בצד השרת (Pydantic) ובצד הלקוח.
+### ✅ עמידה בדרישות
 
+- [x] ממשק עברית מלא עם RTL ועיצוב חברתי
+- [x] יצירת משימות מסיכומים דיאריים עם LLM אמיתי
+- [x] סינון דינמי (סטטוס + אחראי)
+- [x] מנגנון השהייה חכם
+- [x] ולידציות צד-שרת וצד-לקוח
+
+---
+
+### 📚 משפרים עתידיים
+
+- 🎯 סינונים ממשק משתמש מתקדמים
+- 🧠 שירותי AI מתקדמים יותר
+- 🗄️ מעבר ל-PostgreSQL עם migrations
+- 📊 ממשקי דוחות וסטטיסטיקה
+
+---
+
+### 📄 רישיון
+
+הפרויקט מסופק לצורכי הדגמה והערכה.
+
+---
+
+## <a name="english"></a>🇺🇸 English
+
+### 📋 Overview
+
+A complete **MVP** task management system, developed as a take-home assignment for Haara. The system enables:
+
+- ✨ **Automatic task extraction** from daily summaries in Hebrew
+- 🎯 **Dynamic filtering** by status and assignee
+- ⏸️ **Pause mechanism** for task management
+- 🌍 **Full RTL interface** in Hebrew
+
+---
+
+### 🛠️ Tech Stack
+
+| Component | Technology |
+|---|---|
+| **Frontend** | React 18 + Vite + Tailwind CSS + Lucide Icons |
+| **Backend** | Python 3.10+ + FastAPI + Uvicorn |
+| **AI Engine** | Google Gemini (gemini-2.5-flash) |
+| **Database** | JSON File-based Storage |
+
+---
+
+### 🏗️ Architecture & Technical Decisions
+
+#### 🔧 Why FastAPI?
+- ⚡ High performance with async support
+- 📚 Automatic documentation (Swagger UI)
+- ✅ Built-in validation with Pydantic
+
+#### 💾 Local JSON Database
+- 🚀 Instant startup without complex setup
+- 📁 Simple file-based persistence
+
+#### 🎨 UI Design
+- 📱 Responsive with Tailwind CSS
+- ↔️ Full RTL support
+- 🧹 Clean, minimalist interface
+
+#### 🧠 LLM Integration
+- **Model:** Google Gemini 2.5 Flash
+- **Function:** Automatic analysis of daily summaries
+- **Smart Fallback:** System remains functional if API is unavailable
+
+---
+
+### 🚀 Installation & Setup
+
+#### 1️⃣ Backend Setup
+
+```bash
+cd backend
+
+# Create virtual environment
+python -m venv venv
+
+# Activate
+# Windows:
+.\venv\Scripts\activate
+# Mac/Linux:
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+#### 🔑 API Configuration (Optional)
+
+To use AI features, create a `.env` file in `backend/`:
+
+```env
+GEMINI_API_KEY=your_api_key_here
+```
+
+#### ▶️ Run Server
+
+```bash
+python -m uvicorn main:app --reload
+```
+
+🌐 Server runs at: **http://localhost:8000**
+
+---
+
+#### 2️⃣ Frontend Setup
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Run dev server
 npm run dev
 ```
 
-API Endpoints (example) / נקודות קצה לדוגמה
---------------------------------------------
-- `GET /tasks` — list tasks
-- `POST /tasks` — create a task
-- `PATCH /tasks/{id}` — update a task (including pause/resume)
-- `POST /parse` — send a free-text daily summary and receive parsed tasks (mock)
+🌐 App runs at: **http://localhost:5173**
 
-נקודות קצה (דוגמה)
--------------------
-- `GET /tasks` — רשימת משימות
-- `POST /tasks` — יצירת משימה
-- `PATCH /tasks/{id}` — עדכון משימה (כולל השהייה/החזרה)
-- `POST /parse` — שליחת טקסט סיכום יום וקבלת משימות מפורקות (Mock)
+---
 
-Notes / הערות
--------------
-- The project uses `db.json` for simple local persistence; migrating to a production DB (e.g., PostgreSQL) is straightforward.
-- AI/text parsing is mocked in the backend — replace with a real AI integration when ready.
+### 📡 API Endpoints
 
-הערות
------
-- הפרויקט משתמש ב-`db.json` לאחסון פשוט למטרות בדיקה מקומית; מעבר למסד נתונים מלא (למשל PostgreSQL) אפשרי בקלות.
-- ניתוח הטקסט הוא Mock בצד השרת — לחיבור אמיתי של מודל AI יש להחליף את המימוש.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/tasks` | List all tasks |
+| `POST` | `/tasks` | Create new task |
+| `PATCH` | `/tasks/{id}` | Update task (including pause/resume) |
+| `POST` | `/parse` | Parse daily summary and extract tasks |
 
-Future improvements / שיפורים עתידיים
--------------------------------------
-- Add frontend filters by `currentHandler` and status
-- Integrate a real AI service for text parsing
-- Migrate storage to a relational DB and add migrations
+---
 
-שיפורים עתידיים
-----------------
-- הוספת סינונים בממשק לפי `currentHandler` וסטטוס
-- חיבור לשירות AI אמיתי לחיתוך טקסט
-- מעבר אחסון למסד נתונים רלציוני והוספת מיגרציות
+### 🤖 AI Pair Programming Declaration
 
-License / רישיון
------------------
+**As per assignment guidelines**, this project was developed with AI assistance as a pair programmer:
+
+#### 🤝 AI Usage:
+- Initial project structure creation
+- Tailwind configuration and setup
+- Troubleshooting installation issues
+
+#### 🧠 Independent Decisions:
+- ✅ Data structure design
+- ✅ Fallback architecture
+- ✅ Advanced filtering logic
+- ✅ LLM query building
+
+---
+
+### ✅ Requirements Checklist
+
+- [x] Full Hebrew UI with RTL support and clean design
+- [x] Task creation from daily summaries using real LLM
+- [x] Dynamic filtering (status + assignee)
+- [x] Smart pause mechanism
+- [x] Server-side and client-side validation
+
+---
+
+### 📚 Future Improvements
+
+- 🎯 Advanced UI filters
+- 🧠 More sophisticated AI integration
+- 🗄️ Migration to PostgreSQL with migrations
+- 📊 Reporting and analytics dashboards
+
+---
+
+### 📄 License
+
 This project is provided for demonstration and assessment purposes.
 
-הרישיון
--------
-הפרויקט נמסר לצורכי הדגמה והערכת משימה.
+---
 
-Contact / יצירת קשר
----------------------
-For questions or feedback, open an issue or contact the author.
+<div align="center">
 
-ליצירת קשר
------------
-לשאלות או משוב — פתח Issue או פנה למחבר.
+**Built with ❤️ for Haara**
+
+</div>
