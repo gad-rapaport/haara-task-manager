@@ -22,7 +22,7 @@ An end-to-end Minimal Viable Product (MVP) for extracting and managing tasks fro
 
 * **צד לקוח (Frontend):** React (Vite), Tailwind CSS, Lucide Icons.
 * **צד שרת (Backend):** Python 3.10+, FastAPI, Uvicorn, Pydantic.
-* **בינה מלאכותית (AI Engine):** Google Gemini (`gemini-1.5-flash`) באמצעות `google-generativeai` SDK.
+* **בינה מלאכותית (AI Engine):** Google Gemini (`gemini-2.5-flash`) באמצעות `google-generativeai` SDK.
 * **מסד נתונים (Database):** JSON File-based storage (מותאם ל-MVP).
 
 ---
