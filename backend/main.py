@@ -83,45 +83,51 @@ def create_summary(summary: SummaryCreate):
     tasks_created = False
 
     # 1. ניסיון פענוח באמצעות AI (אם יש מפתח זמין)
+    # 1. ניסיון פענוח באמצעות AI (אם יש מפתח זמין)
     if GEMINI_API_KEY:
         try:
             model = genai.GenerativeModel('gemini-2.5-flash')
             prompt = f"""
-            You are a smart assistant for an Israeli company. 
-            Read the following daily summary in Hebrew. Extract all action items/tasks.
-            Return ONLY a valid JSON array of objects. Do not include markdown formatting like ```json.
-            Each object must have these exact keys:
-            "title" (string, short action title),
-            "description" (string, full context),
-            "owner" (string, extract the responsible person's name or return "לא מוגדר"),
-            "urgency" (string, choose: "low", "medium", "high"),
-            "importance" (string, choose: "low", "medium", "high")
-
-            Summary: {summary.content}
+            Analyze the following Hebrew text and extract ANY actionable items.
+            You must return a JSON array of objects. If no tasks, return [].
+            Keys for each object: "title", "description", "owner" (or "לא מוגדר"), "urgency" (low/medium/high), "importance" (low/medium/high), "effort" (small/medium/large).
+            
+            Text to analyze: {summary.content}
             """
-            response = model.generate_content(prompt)
-            raw_text = response.text.strip().removeprefix("```json").removesuffix("```").strip()
-            ai_tasks = json.loads(raw_text)
-
-            for at in ai_tasks:
-                new_task = {
-                    "id": str(uuid.uuid4()),
-                    "title": at.get("title", "משימה חדשה"),
-                    "description": at.get("description", ""),
-                    "owner": at.get("owner", "לא מוגדר"),
-                    "currentHandler": "",
-                    "urgency": at.get("urgency", "medium"),
-                    "importance": at.get("importance", "medium"),
-                    "effort": "medium",
-                    "status": "open",
-                    "summaryId": new_summary["id"],
-                    "createdAt": datetime.now().isoformat(),
-                    "updatedAt": datetime.now().isoformat()
-                }
-                db["tasks"].append(new_task)
+            
+            # הכוח האמיתי: נעילת המודל להחזרת JSON טהור בלבד!
+            response = model.generate_content(
+                prompt,
+                generation_config={"response_mime_type": "application/json"}
+            )
+            
+            ai_tasks = json.loads(response.text)
+            print(f"🤖 AI raw output: {ai_tasks}") # הדפסה לטרמינל כדי שתוכל לראות מה הוא מצא
+            
+            if ai_tasks:
+                for at in ai_tasks:
+                    new_task = {
+                        "id": str(uuid.uuid4()),
+                        "title": at.get("title", "משימה ללא כותרת")[:50],
+                        "description": at.get("description", ""),
+                        "owner": at.get("owner", "לא מוגדר"),
+                        "currentHandler": "",
+                        "urgency": at.get("urgency", "medium"),
+                        "importance": at.get("importance", "high"),
+                        "effort": at.get("effort", "small"),
+                        "status": "open",
+                        "summaryId": new_summary["id"],
+                        "createdAt": datetime.now().isoformat(),
+                        "updatedAt": datetime.now().isoformat()
+                    }
+                    db["tasks"].append(new_task)
                 tasks_created = True
+                print("✅ AI successfully generated tasks!")
+            else:
+                print("ℹ️ AI decided there are no tasks in this text.")
+
         except Exception as e:
-            print(f"AI Parse Failed, falling back to Regex: {e}")
+            print(f"❌ AI Parse Failed: {e}")
 
     # 2. גיבוי (Fallback) - אם אין AI או שה-API נפל, מנתח טקסט טיפש
     if not tasks_created:

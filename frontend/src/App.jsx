@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { Clock, Play, CheckCircle, PauseCircle, Trash2, Zap, User, Calendar } from 'lucide-react'
+import { Clock, Play, CheckCircle, PauseCircle, Trash2, Zap, User, Calendar, Download } from 'lucide-react'
 
 const API_BASE = 'http://localhost:8000/api'
 
@@ -64,6 +65,37 @@ function App() {
     }
   }
 
+  const exportToCSV = () => {
+    if (tasks.length === 0) return;
+    
+    const headers = ['כותרת', 'תיאור', 'אחראי', 'מטפל נוכחי', 'דחיפות', 'חשיבות', 'מאמץ', 'סטטוס'];
+    
+    const csvData = tasks.map(t => {
+      // עוטפים במרכאות כדי שפסיקים בטקסט לא ישברו את העמודות
+      return [
+        `"${(t.title || '').replace(/"/g, '""')}"`,
+        `"${(t.description || '').replace(/"/g, '""')}"`,
+        `"${t.owner || ''}"`,
+        `"${t.currentHandler || ''}"`,
+        `"${t.urgency || ''}"`,
+        `"${t.importance || ''}"`,
+        `"${t.effort || ''}"`,
+        `"${t.status || ''}"`
+      ].join(',');
+    });
+    
+    // מוסיפים \uFEFF כדי שאקסל יזהה את הקידוד כ-UTF-8 בעברית
+    const csvContent = [headers.join(','), ...csvData].join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `haara_tasks_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   const statusIcons = {
     open: <Clock className="w-5 h-5 text-gray-400" />,
     in_progress: <Play className="w-5 h-5 text-amber-500" />,
@@ -78,15 +110,6 @@ function App() {
       case 'low': return <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-0.5 rounded-md text-xs font-medium">נמוך</span>;
       default: return null;
     }
-  }
-
-  const getSmallBadge = (label, value) => {
-    if (!value) return null;
-    return (
-      <span className="text-xs text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">
-        {label}: {value}
-      </span>
-    );
   }
 
   return (
@@ -136,7 +159,7 @@ function App() {
         </div>
       </section>
 
-      {/* אזור הסינון - כולל סינון מטפל נוכחי */}
+      {/* אזור הסינון */}
       <section className="flex flex-wrap gap-4 mb-8 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
         <input 
           type="text" 
@@ -146,7 +169,7 @@ function App() {
         />
         <input 
           type="text" 
-          placeholder="סינון לפי מטפל נוכחי..." 
+          placeholder="סינון לפי מטפל..." 
           className="border border-gray-200 rounded-lg p-2.5 bg-white focus:outline-none focus:border-amber transition-colors flex-1 min-w-[150px] text-sm"
           onChange={(e) => setFilters({...filters, currentHandler: e.target.value})}
         />
@@ -160,48 +183,77 @@ function App() {
           <option value="paused">בהשהייה</option>
           <option value="done">בוצע</option>
         </select>
+        
+        {/* כפתור הייצוא החדש */}
+        <button 
+          onClick={exportToCSV}
+          disabled={tasks.length === 0}
+          className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-5 py-2.5 rounded-lg hover:shadow-lg hover:shadow-emerald-500/20 transition-all disabled:opacity-50 disabled:hover:shadow-none text-sm font-medium"
+          title="הורדת המשימות לקובץ אקסל"
+        >
+          <Download className="w-4 h-4" />
+          ייצוא ל-CSV
+        </button>
       </section>
 
-      {/* רשימת משימות - כולל הצגת כל השדות הנדרשים */}
+      {/* רשימת משימות */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tasks.map((task, index) => (
           <div 
             key={task.id} 
-            className="animate-fade-in-up bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-xl hover:border-amber/20 hover:-translate-y-1 transition-all duration-300 group"
+            className="animate-fade-in-up bg-white p-6 rounded-2xl shadow-md border border-gray-100 flex flex-col justify-between hover:shadow-2xl hover:border-amber/30 hover:-translate-y-1 transition-all duration-300 group"
             style={{ animationDelay: `${index * 50}ms` }}
           >
             <div>
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold text-gray-800 text-lg leading-tight group-hover:text-amber-dark transition-colors">{task.title}</h3>
-                <div className="bg-gray-50 p-1.5 rounded-lg" title={task.status}>
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="font-bold text-gray-800 text-xl leading-tight group-hover:text-amber-dark transition-colors">
+                  {task.title || "משימה ללא כותרת"}
+                </h3>
+                <div className="bg-gray-100 p-2 rounded-xl" title={task.status}>
                   {statusIcons[task.status]}
                 </div>
               </div>
-              <p className="text-gray-500 text-sm mb-4 leading-relaxed">{task.description}</p>
               
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <User className="w-3.5 h-3.5 text-gray-400" />
-                  <span className="font-semibold">אחראי:</span> {task.owner}
-                  {task.currentHandler && (
-                    <span className="text-gray-400">| מטפל כרגע: {task.currentHandler}</span>
-                  )}
+              <p className="text-gray-600 text-sm mb-6 leading-relaxed border-r-2 border-amber-light/30 pr-3">
+                {task.description}
+              </p>
+              
+              <div className="space-y-3 mb-6">
+                {/* בלוק לאחראי משימה הכללי */}
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-700 bg-gray-50 p-2 rounded-lg border border-gray-100">
+                  <User className="w-4 h-4 text-amber" />
+                  <span>אחראי: <span className="text-gray-900">{task.owner || "לא מוגדר"}</span></span>
                 </div>
                 
-                <div className="flex flex-wrap items-center gap-2">
+                {/* בלוק למטפל הנוכחי - בולט ומופרד */}
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-600 bg-blue-50/50 p-2 rounded-lg border border-blue-100/50">
+                  <Play className="w-3.5 h-3.5 text-blue-500" />
+                  <span>מטפל כרגע: <span className="text-blue-700">{task.currentHandler || "ממתין לטיפול"}</span></span>
+                </div>
+                
+                <div className="flex flex-wrap gap-2 pt-1">
                   {getUrgencyBadge(task.urgency)}
-                  {getSmallBadge('חשיבות', task.importance)}
-                  {getSmallBadge('הערכת עבודה', task.effort)}
+                  {task.importance && (
+                    <span className="bg-purple-50 text-purple-600 border border-purple-100 px-2 py-0.5 rounded-md text-xs font-bold">
+                      חשיבות: {task.importance}
+                    </span>
+                  )}
+                  {task.effort && (
+                    <span className="bg-slate-50 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-md text-xs font-bold">
+                      מאמץ: {task.effort}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
             
-            <div className="flex justify-between items-center pt-3 border-t border-gray-50">
+            <div className="flex justify-between items-center pt-4 border-t border-gray-100">
               <select 
-                className={`text-sm font-medium border-none rounded-md py-1.5 px-2 cursor-pointer outline-none transition-colors
-                  ${task.status === 'done' ? 'bg-emerald-50 text-emerald-700' : 
-                    task.status === 'in_progress' ? 'bg-amber-50 text-amber-700' : 
-                    task.status === 'paused' ? 'bg-red-50 text-red-700' : 'bg-gray-100 text-gray-700'}
+                className={`text-sm font-bold border-2 rounded-lg py-1.5 px-3 cursor-pointer outline-none transition-all
+                  ${task.status === 'done' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 
+                    task.status === 'in_progress' ? 'border-amber-200 bg-amber-50 text-amber-700' : 
+                    task.status === 'paused' ? 'border-red-200 bg-red-50 text-red-700' : 
+                    'border-gray-200 bg-gray-50 text-gray-700'}
                 `}
                 value={task.status}
                 onChange={(e) => updateTaskStatus(task.id, e.target.value)}
@@ -211,12 +263,12 @@ function App() {
                 <option value="paused">בהשהייה</option>
                 <option value="done">בוצע</option>
               </select>
+              
               <button 
                 onClick={() => deleteTask(task.id)} 
-                className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-all"
-                title="מחק משימה"
+                className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition-all"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-5 h-5" />
               </button>
             </div>
           </div>
