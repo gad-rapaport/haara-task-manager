@@ -249,7 +249,32 @@ python -m uvicorn main:app --host 0.0.0.0 --port 8000
 
 ---
 
-### 📚 משפרים עתידיים
+### 🚀 משימות עתידיות
+
+#### 🎯 מסך יעדים (Goals Screen) - בקרוב
+כאן ניתן יהיה להגדיר ולעקוב אחר יעדים אסטרטגיים ארוכי טווח. הפיצ'ר יאפשר:
+- 📌 הגדרת יעדים עם מדדי הצלחה (KPIs)
+- 📊 עקיבה עתידית אחר התקדמות היעדים
+- 🔗 קישור בין משימות ליעדים
+- 📈 ריכוז סטטיסטי לעמידה ביעדים
+
+**סטטוס:** פיצ'ר זה נמצא בתהליכי פיתוח
+
+---
+
+#### ⚙️ הגדרות מערכת (System Settings) - בקרוב
+כאן ניתן יהיה לנהל הגדרות משתמש, צוותים, אינטגרציות ועוד. הפיצ'ר יאפשר:
+- 👤 ניהול פרופיל משתמש והעדפות
+- 👥 ניהול צוותים והרשאות
+- 🔌 אינטגרציות עם כלים חיצוניים (Slack, Google Calendar וכו')
+- 🎨 התאמת ממשק וערכת צבעים
+- 📬 הגדרות התראות והודעות
+
+**סטטוס:** פיצ'ר זה נמצא בתהליכי פיתוח
+
+---
+
+### 📚 משפרים עתידיים נוספים
 
 - 🎯 סינונים ממשק משתמש מתקדמים יותר (תאריכים, תגיות)
 - 🧠 שירותי AI מתקדמים יותר (OpenAI / Anthropic)
@@ -516,6 +541,31 @@ python -m uvicorn main:app --host 0.0.0.0 --port 8000
 - [x] Kanban board with Drag & Drop
 - [x] Dashboard with statistics
 - [x] CSV export
+
+---
+
+### 🚀 Upcoming Features (Roadmap)
+
+#### 🎯 Goals Screen (Coming Soon)
+A dedicated dashboard to define and track long-term strategic goals. This feature will enable:
+- 📌 Setting goals with success metrics (KPIs)
+- 📊 Track progress against goals over time
+- 🔗 Link tasks to strategic goals
+- 📈 Goal completion statistics and insights
+
+**Status:** Feature is under development
+
+---
+
+#### ⚙️ System Settings (Coming Soon)
+Manage user settings, teams, integrations, and more. This feature will enable:
+- 👤 User profile management and preferences
+- 👥 Team management and permissions
+- 🔌 Integrations with external tools (Slack, Google Calendar, etc.)
+- 🎨 UI customization and theme selection
+- 📬 Notification and alert settings
+
+**Status:** Feature is under development
 
 ---
 
