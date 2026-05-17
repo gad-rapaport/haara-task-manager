@@ -1,8 +1,8 @@
-# 🔄 CHANGES.md - System Improvements & Enhancements
+# 🔄 CHANGES.md - System Improvements & Enhancements (Code Review Response)
 
 <div align="center">
 
-**Latest Improvements Sprint — Stability, AI Accuracy & UX Enhancements**
+**Latest Improvements Sprint — Stability, AI Accuracy, UX Enhancements & Code Review Fixes**
 
 [English](#english) • [עברית](#hebrew)
 
@@ -14,161 +14,79 @@
 
 ### 📋 סקירה כללית
 
-סבב השיפורים האחרון התמקד בחיזוק ה-Core של המערכת, שיפור יציבות הנתונים, שדרוג יכולות ה-AI ושיפור חוויית המשתמש כך שהמערכת תרגיש כמו מוצר מלא ולא רק MVP.
+סבב השיפורים האחרון בוצע בעקבות Code Review מעמיק, והתמקד בסגירת קצוות טכניים (Edge Cases), סנכרון מלא בין הקוד למסמכי התיעוד, ושיפור חוויית המשתמש כך שתשקף את הפעולות האמיתיות שמתרחשות בשרת.
 
 העדכונים כללו:
-- 🛡️ ולידציות קשיחות בצד השרת
-- 🧠 שיפור משמעותי בלוגיקת ה-AI
-- 📱 התאמה מלאה למובייל
-- ✨ מערכת פידבק ויזואלי למשתמש
-- 🏗️ Refactoring ארכיטקטוני
-- 🔧 שיפורי יציבות ותאימות
-- 🗂️ טיפול במקרי קצה של קובץ DB ריק
+- 🛡️ החלת ולידציות Pydantic גם על מסלול ה-AI.
+- 🎯 דיוק הפידבק למשתמש (טיפול במצב של 0 משימות מה-AI).
+- 🧩 החזרת פילטרים ושדות UI חסרים.
+- 🏗️ השלמת ה-Refactor של שכבת התקשורת.
+- 🔒 מניעת CSV Injection.
+- 🔧 תיקוני תלויות (Dependencies) וקידוד (Encoding) ל-Windows.
 
 ---
 
 ### 🛠️ תיקוני ליבה ודרישות קריטיות
 
-#### 🔒 Server-side Validation עם Pydantic
+#### 🧠 מסלול עוקף ולידציה ב-AI (AI Route Validation)
 
 ##### הבעיה
-נמצא כי ניתן לשלוח ערכים לא חוקיים ל-API, והם נשמרים בבסיס הנתונים ללא חסימה.
+משימות שנוצרו דרך חילוץ AI נשמרו ישירות ל-DB ללא מעבר במנגנון הולידציה של Pydantic, מה שחשף את המערכת להזיות של המודל.
 
 ##### הפתרון
-בוצעה ולידציה קשיחה באמצעות **Pydantic Literals**.
-
-השרת חוסם כעת אוטומטית (`HTTP 422`) כל בקשה שמכילה ערכים לא חוקיים עבור:
-- `status`
-- `urgency`
-- `effort`
-
-##### התוצאה
-- ✅ שמירה על שלמות הנתונים
-- ✅ מניעת נתונים שבורים ב-DB
-- ✅ API יציב ובטוח יותר
+כל משימה שמחולצת מה-AI עוברת כעת אינסטנציה דרך המודל `TaskCreate`. אם ה-AI מייצר נתון לא חוקי (למשל `urgency` שגוי), המשימה נפסלת והמערכת רושמת אזהרה ללוג, תוך שמירה על DB נקי.
 
 ---
 
-#### 🗂️ טיפול במקרה קצה — קובץ DB ריק
+#### 🪟 תאימות Windows וקידוד (Encoding)
 
 ##### הבעיה
-כאשר קובץ `db.json` היה ריק לחלוטין, המערכת הייתה קורסת בזמן טעינת הנתונים.
+קריסות בסביבת Windows בשל פקודות `print` עם תווים שאינם נתמכים ב-`charmap`.
 
 ##### הפתרון
-נוסף מנגנון הגנה שמבצע:
-- בדיקה האם הקובץ ריק
-- טעינת מבנה ברירת מחדל במקרה הצורך
-- מניעת קריסת JSON parsing
-
-##### התוצאה
-- ✅ יציבות גבוהה יותר
-- ✅ מניעת קריסות בהרצה ראשונית
-- ✅ התאוששות אוטומטית מקבצי DB פגומים או ריקים
-
----
-
-#### 🧠 שיפור לוגיקת AI — הפרדת תפקידים
-
-##### הבעיה
-המודל התקשה להבין מי:
-- האחראי הכולל על המשימה
-- המטפל בפועל ברגע הנתון
-
-##### הפתרון
-ה-Prompt של המודל שוכתב מחדש.
-
-כעת ה-AI מבצע ניתוח סמנטי ומפריד בין:
-
-| שדה | משמעות |
-|---|---|
-| `Owner` | האחראי הכולל על המשימה |
-| `Current Handler` | מי שמטפל במשימה כרגע |
-
-##### שיפורים נוספים
-- ✨ תמצות אוטומטי של כותרות
-- 📝 הרחבת תיאורי משימות באופן חכם
-- 🎯 מיפוי מדויק יותר מטקסט חופשי
-
----
-
-#### 🔔 מערכת Feedback למשתמש
-
-##### Toast Notifications
-נוספה מערכת Toasts מלאה ב-Frontend.
-
-המשתמש מקבל חיווי מיידי על כל פעולת API:
-- ✅ הצלחה — הודעה ירוקה
-- ❌ שגיאה — הודעה אדומה
-
-##### Confirm Dialog למחיקה
-נוסף חלון אישור לפני מחיקת משימה כדי למנוע מחיקה בטעות.
+הוסרו הדפסות מסוכנות (עברית/אימוג'יז) מהשרת. בנוסף, מוגדר כעת `encoding="utf-8"` באופן מפורש בכל פעולות הקריאה והכתיבה לקובץ ה-JSON כדי להבטיח תמיכה חוצת-פלטפורמות מלאה.
 
 ---
 
 ### 📱 שיפורי UX ופונקציונליות
 
-#### 📲 התאמה מלאה למובייל
+#### 🔔 מניעת פידבק מטעה למשתמש (UX Truthfulness)
 
-נוספה **Bottom Navigation Bar** ייעודית למובייל המאפשרת מעבר נוח בין:
-- 📋 לוח המשימות
-- 🎯 יעדים
-- ⚙️ הגדרות
+##### הבעיה
+כאשר ה-AI לא זיהה משימות בטקסט, השרת החזיר HTTP 200, מה שגרם לפרונטאנד להציג "הודעת הצלחה" שגויה.
+
+##### הפתרון
+השרת כעת מחזיר אובייקט הכולל את השדה `tasksCreated`. הפרונטאנד בודק ערך זה:
+- `tasksCreated > 0`: מוצגת הודעת Success ירוקה עם מספר המשימות.
+- `tasksCreated === 0`: מוצגת הודעת Info צהובה ("הסיכום נותח אך לא נמצאו משימות").
 
 ---
 
-#### ✏️ Full CRUD — עריכת משימות מלאה
+#### 🧩 השלמת ממשק המשתמש (Restored UI Elements)
 
-נוסף Modal לעריכת משימות.
-
-כעת ניתן לערוך:
-- כותרת
-- תיאור
-- אחראי
-- מטפל נוכחי
-- סטטוס
+- **פילטרים:** הוחזרו תיבות הסינון החופשי לפי `owner` ו-`currentHandler`.
+- **תאריך:** הוחזר שדה בחירת התאריך (`<input type="date">`) לטופס הסיכום היומי.
+- **סטטוסים:** נוסף סטטוס `done` לתיבת הסינון למניעת נתונים "כלואים" שאינם ניתנים לאיתור.
+- **ולידציית Frontend:** ה-Edit Modal חוסם מעתה שמירת משימה ללא כותרת (Title).
 
 ---
 
 ### 🏗️ ארכיטקטורה ויציבות
 
-#### 🔧 הפרדת שכבות (Refactoring)
+#### 🛡️ אבטחת ייצוא נתונים (CSV Injection Protection)
+נוספה פונקציית סניטציה לנתונים המיוצאים ל-CSV. תווים מסוכנים (`=, +, -, @`) זוכים לקידומת גרש (`'`) למניעת הרצת נוסחאות זדוניות ב-Excel.
 
-##### Backend
-מודלי הנתונים הופרדו לקובץ:
-```python
-models.py
-```
+#### 🔧 השלמת ה-Refactor (apiService)
+כל קריאות ה-`axios` הישירות מ-`App.jsx` הוסרו. המערכת מסתמכת כעת באופן בלעדי על `apiService.js` עבור כל תקשורת מול ה-API, ליצירת שכבת תקשורת אחידה.
 
-##### Frontend
-כל לוגיקת ה-API רוכזה בתוך:
-```javascript
-apiService.js
-```
+#### 📦 ניהול Dependencies
+הספריות `axios` ו-`lucide-react` הועברו מ-`devDependencies` ל-`dependencies` בקובץ `package.json` כדי להבטיח ריצה חלקה בסביבות Production.
 
 ---
 
-#### 🪟 תאימות Windows
+### 📚 סנכרון תיעוד (Documentation Truth)
+קובץ ה-`README.md` עודכן ונבדק כדי להבטיח התאמה של **100%** ליכולות המערכת הנוכחיות. תכונות תכנוניות (כמו "עומס עובדים") הוסרו מהתיעוד כדי למנוע הבטחות שווא ולשמור על אמינות מלאה של התיעוד מול הקוד.
 
-הוסרו תווי Unicode מהודעות Print בשרת למניעת קריסות Encoding בסביבות Windows מסוימות.
-
----
-
-#### 📚 עדכון README
-
-קובץ ה-README הורחב עם:
-- Fresh Clone Setup
-- Virtual Environment
-- הוראות הרצה מלאות
-
----
-
-### 🧪 בדיקות שבוצעו
-
-- ✅ Fresh Clone Testing
-- ✅ Validation Tests
-- ✅ AI Consistency Tests
-- ✅ Empty DB Edge Case Testing
-- ✅ Cross-platform Testing
 
 ---
 
@@ -176,135 +94,75 @@ apiService.js
 
 ### 📋 Overview
 
-This improvement sprint focused on strengthening the system core, improving data stability, enhancing AI behavior, and polishing the overall user experience.
+This recent improvement sprint was conducted following an in-depth Code Review. It focused on closing technical edge cases, ensuring full synchronization between the code and documentation, and refining the UX to reflect the actual server state.
 
 Updates included:
-- 🛡️ Strict backend validation
-- 🧠 Smarter AI logic
-- 📱 Full mobile responsiveness
-- ✨ Visual user feedback system
-- 🏗️ Architecture refactoring
-- 🔧 Stability improvements
-- 🗂️ Empty DB edge-case handling
+- 🛡️ Applying Pydantic validation to the AI pipeline.
+- 🎯 Accurate user feedback (handling 0 extracted tasks).
+- 🧩 Restoring missing UI filters and inputs.
+- 🏗️ Completing the API communication refactor.
+- 🔒 Preventing CSV Injection.
+- 🔧 Fixing Windows encoding and dependency issues.
 
 ---
 
 ### 🛠️ Core Fixes & Critical Improvements
 
-#### 🔒 Server-side Validation with Pydantic
-
-Strict validation was implemented using **Pydantic Literals**.
-
-The backend now blocks invalid values (`HTTP 422`) for:
-- `status`
-- `urgency`
-- `effort`
-
----
-
-#### 🗂️ Empty DB File Edge-case Handling
+#### 🧠 AI Route Validation Loophole
 
 ##### Issue
-The system could crash if `db.json` existed but was completely empty.
+Tasks extracted by the AI were saved directly to the DB without passing through Pydantic's validation, exposing the system to AI hallucinations.
 
 ##### Solution
-A protection layer was added to:
-- Detect empty DB files
-- Load default fallback structure
-- Prevent JSON parsing crashes
-
-##### Result
-- ✅ Improved startup stability
-- ✅ Better fault tolerance
-- ✅ Automatic recovery from corrupted or empty DB files
+Every task extracted by the AI is now instantiated through the `TaskCreate` model. If the AI generates invalid data (e.g., an illegal `urgency` value), the task is discarded and a warning is logged, keeping the DB clean.
 
 ---
 
-#### 🧠 AI Role Separation Improvements
+#### 🪟 Windows Encoding Compatibility
 
-The AI prompt was redesigned to distinguish between:
-- Task Owner
-- Current Handler
+##### Issue
+Crashes occurred in Windows environments due to `print` statements containing unsupported characters in the default `charmap`.
 
-Additional improvements:
-- Automatic title summarization
-- Smart description expansion
-- Better semantic extraction
-
----
-
-#### 🔔 User Feedback System
-
-Added:
-- ✅ Toast notifications
-- ✅ Delete confirmation dialog
+##### Solution
+Dangerous prints (Hebrew/Emojis) were removed from the server. Additionally, `encoding="utf-8"` is now explicitly defined in all JSON file I/O operations to ensure full cross-platform compatibility.
 
 ---
 
 ### 📱 UX & Functionality Improvements
 
-#### 📲 Full Mobile Support
+#### 🔔 Preventing Misleading Feedback (UX Truthfulness)
 
-Added dedicated Bottom Navigation for mobile devices.
+##### Issue
+When the AI found no tasks, the server returned HTTP 200, prompting the frontend to show a false "Success" toast.
+
+##### Solution
+The server now returns an object containing `tasksCreated`. The frontend checks this value:
+- `tasksCreated > 0`: Shows a green Success toast with the task count.
+- `tasksCreated === 0`: Shows a yellow Info toast ("Summary parsed but no tasks found").
 
 ---
 
-#### ✏️ Full CRUD Editing
+#### 🧩 Restoring Missing UI Elements
 
-Added full task editing modal.
-
-Users can now edit:
-- Title
-- Description
-- Owner
-- Current Handler
-- Status
+- **Filters:** Restored the free-text filter inputs for `owner` and `currentHandler`.
+- **Date Picker:** Restored the date selection input for the daily summary form.
+- **Statuses:** Added the `done` status to the filter dropdown to prevent unsearchable data.
+- **Frontend Validation:** The Edit Modal now prevents saving a task with an empty Title.
 
 ---
 
 ### 🏗️ Architecture & Stability
 
-#### 🔧 Refactoring
+#### 🛡️ CSV Injection Protection
+Added a sanitization function for CSV exports. Dangerous leading characters (`=, +, -, @`) are now prefixed with a single quote (`'`) to prevent malicious formula execution in Excel.
 
-Backend:
-```python
-models.py
-```
+#### 🔧 Completing the API Refactor
+Removed all direct `axios` calls from `App.jsx`. The application now relies exclusively on `apiService.js` for all API communication, establishing a unified communication layer.
 
-Frontend:
-```javascript
-apiService.js
-```
+#### 📦 Dependency Management
+Moved `axios` and `lucide-react` from `devDependencies` to regular `dependencies` in `package.json` to ensure a smooth build process in Production environments.
 
 ---
 
-#### 🪟 Windows Compatibility
-
-Removed Unicode characters from backend print statements to prevent encoding crashes on certain Windows terminals.
-
----
-
-#### 📚 README Improvements
-
-Expanded setup instructions including:
-- Fresh clone setup
-- Virtual environments
-- Full local run guide
-
----
-
-### 🧪 Tests Performed
-
-- ✅ Fresh Clone Testing
-- ✅ Validation Testing
-- ✅ AI Consistency Testing
-- ✅ Empty DB Edge-case Testing
-- ✅ Cross-platform Testing
-
----
-
-<div align="center">
-
-**Built with ❤️ as part of the ongoing system evolution**
-
-</div>
+### 📚 Documentation Sync
+The `README.md` was updated and strictly reviewed to ensure **100% accuracy** with current system capabilities. Planned features that were not fully implemented were removed to maintain documentation integrity and avoid false promises.
