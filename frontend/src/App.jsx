@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
-import { apiService } from './services/api'
-import { Clock, Play, CheckCircle, PauseCircle, Trash2, Zap, User, Calendar, Download, BarChart2, Activity, Target, LayoutDashboard, Settings, Edit3, X } from 'lucide-react'
+import { Clock, Play, CheckCircle, PauseCircle, Trash2, Zap, User, Download, BarChart2, Activity, Target, LayoutDashboard, Settings, Edit3, X, Info } from 'lucide-react'
+import { apiService } from './services/api' // <-- שימוש מלא ב-API Service החדש שלנו
 
-const API_BASE = 'http://localhost:8000/api'
-
-// --- PLACEHOLDER COMPONENTS (כאן הייתה חסרה ההגדרה) ---
+// --- PLACEHOLDER COMPONENTS ---
 const GoalsView = () => (
   <div className="bg-white p-12 rounded-3xl shadow-sm border border-gray-100 text-center flex flex-col items-center gap-6 mt-8">
     <div className="bg-amber-100 p-5 rounded-full shadow-inner"><Target className="w-12 h-12 text-amber-600" /></div>
@@ -22,7 +19,6 @@ const SettingsView = () => (
   </div>
 )
 
-// --- MAIN APP COMPONENT ---
 function App() {
   const [tasks, setTasks] = useState([])
   const [summaryText, setSummaryText] = useState('')
@@ -32,21 +28,17 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [toast, setToast] = useState(null);
   
-  // מצב לעריכת משימה
   const [editingTask, setEditingTask] = useState(null);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 4000);
   };
 
   const fetchTasks = async () => {
     try {
-      const params = {}
-      if (filters.owner) params.owner = filters.owner
-      if (filters.currentHandler) params.currentHandler = filters.currentHandler
-      if (filters.status) params.status = filters.status
-      const res = await apiService.getTasks(params)
+      // FIX 7: שימוש נקי ב-apiService במקום axios ישירות
+      const res = await apiService.getTasks(filters);
       setTasks(res.data)
     } catch (err) {
       showToast('שגיאה בטעינת המשימות', 'error');
@@ -62,10 +54,17 @@ function App() {
     if (!summaryText.trim()) return
     setLoading(true)
     try {
-      await axios.post(`${API_BASE}/summaries`, { date: summaryDate, content: summaryText })
+      const res = await apiService.createSummary({ date: summaryDate, content: summaryText });
       setSummaryText('')
       await fetchTasks()
-      showToast('המשימות נוצרו בהצלחה!', 'success');
+      
+      // FIX 2: פידבק אמיתי למשתמש. אם חזרו 0 משימות, לא משקרים שהייתה הצלחה ענקית.
+      const createdCount = res.data.tasksCreated || 0;
+      if (createdCount > 0) {
+        showToast(`מעולה! ה-AI ניתח את הסיכום ויצר ${createdCount} משימות חדשות.`, 'success');
+      } else {
+        showToast('הסיכום נשמר, אך ה-AI לא זיהה בו משימות מוגדרות לחילוץ.', 'info');
+      }
     } catch (err) {
       showToast('שגיאה בניתוח הסיכום', 'error');
     } finally {
@@ -75,7 +74,7 @@ function App() {
 
   const updateTaskStatus = async (id, status) => {
     try {
-      await axios.patch(`${API_BASE}/tasks/${id}`, { status })
+      await apiService.updateTask(id, { status });
       await fetchTasks()
       showToast('סטטוס המשימה עודכן', 'success');
     } catch (err) {
@@ -85,8 +84,15 @@ function App() {
 
   const handleUpdateTask = async (e) => {
     e.preventDefault();
+    
+    // FIX 9: ולידציה ב-Modal (לא מאפשרים שמירת משימה ללא כותרת)
+    if (!editingTask.title.trim()) {
+      showToast('שגיאה: כותרת המשימה אינה יכולה להיות ריקה', 'error');
+      return;
+    }
+
     try {
-      await axios.patch(`${API_BASE}/tasks/${editingTask.id}`, editingTask);
+      await apiService.updateTask(editingTask.id, editingTask);
       setEditingTask(null);
       await fetchTasks();
       showToast('המשימה עודכנה בהצלחה', 'success');
@@ -98,7 +104,7 @@ function App() {
   const deleteTask = async (id) => {
     if (!window.confirm("למחוק משימה זו לצמיתות?")) return;
     try {
-      await axios.delete(`${API_BASE}/tasks/${id}`)
+      await apiService.deleteTask(id);
       await fetchTasks()
       showToast('המשימה נמחקה', 'success');
     } catch (err) {
@@ -106,11 +112,19 @@ function App() {
     }
   }
 
+  // FIX 11: אבטחת ה-CSV מפני נוסחאות זדוניות (CSV Injection)
+  const sanitizeCSV = (str) => {
+    if (!str) return '';
+    const cleanStr = String(str).replace(/"/g, '""');
+    if (/^[=\+\-@]/.test(cleanStr)) return `"'${cleanStr}"`; 
+    return `"${cleanStr}"`;
+  }
+
   const exportToCSV = () => {
     if (tasks.length === 0) return;
     const headers = ['כותרת', 'תיאור', 'אחראי', 'מטפל נוכחי', 'סטטוס'];
     const csvData = tasks.map(t => [
-      `"${t.title || ''}"`, `"${t.description || ''}"`, `"${t.owner || ''}"`, `"${t.currentHandler || ''}"`, `"${t.status || ''}"`
+      sanitizeCSV(t.title), sanitizeCSV(t.description), sanitizeCSV(t.owner), sanitizeCSV(t.currentHandler), sanitizeCSV(t.status)
     ].join(','));
     const blob = new Blob(['\uFEFF' + [headers.join(','), ...csvData].join('\n')], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -142,7 +156,8 @@ function App() {
       
       {/* --- TOAST --- */}
       {toast && (
-        <div className={`fixed bottom-24 md:bottom-6 right-6 px-6 py-3 rounded-xl shadow-2xl text-white z-[100] animate-fade-in-up flex items-center gap-3 ${toast.type === 'error' ? 'bg-red-500' : 'bg-emerald-600'}`}>
+        <div className={`fixed bottom-24 md:bottom-6 right-6 px-6 py-3 rounded-xl shadow-2xl text-white z-[100] animate-fade-in-up flex items-center gap-3 ${toast.type === 'error' ? 'bg-red-500' : toast.type === 'info' ? 'bg-amber-500' : 'bg-emerald-600'}`}>
+          {toast.type === 'error' ? <Zap className="w-5 h-5" /> : toast.type === 'info' ? <Info className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
           {toast.message}
         </div>
       )}
@@ -157,8 +172,8 @@ function App() {
             </div>
             <form onSubmit={handleUpdateTask} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1">כותרת המשימה</label>
-                <input type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:border-amber-500" value={editingTask.title} onChange={e => setEditingTask({...editingTask, title: e.target.value})} />
+                <label className="block text-xs font-bold text-gray-400 mb-1">כותרת המשימה *</label>
+                <input type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:border-amber-500" value={editingTask.title} onChange={e => setEditingTask({...editingTask, title: e.target.value})} required />
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-400 mb-1">תיאור</label>
@@ -166,7 +181,7 @@ function App() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 mb-1">אחראי</label>
+                  <label className="block text-xs font-bold text-gray-400 mb-1">אחראי (Owner)</label>
                   <input type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:border-amber-500" value={editingTask.owner} onChange={e => setEditingTask({...editingTask, owner: e.target.value})} />
                 </div>
                 <div>
@@ -211,7 +226,6 @@ function App() {
       <div className="max-w-7xl mx-auto p-4 md:p-8">
         {activeTab === 'dashboard' && (
           <>
-            {/* Dashboard Stats */}
             <div className="grid grid-cols-4 gap-3 mb-8">
               {columns.map(c => (
                 <div key={c.id} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
@@ -223,22 +237,36 @@ function App() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
               <section className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                <textarea className="w-full bg-slate-50 border-none rounded-2xl p-4 h-24 focus:ring-2 focus:ring-amber-500/20 outline-none resize-none" placeholder="הדבק סיכום..." value={summaryText} onChange={e => setSummaryText(e.target.value)} />
+                {/* FIX 4: החזרת שדה בחירת התאריך */}
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold text-gray-800">סיכום יומי</h2>
+                  <input type="date" className="bg-slate-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-amber-500 text-gray-600 font-medium" value={summaryDate} onChange={(e) => setSummaryDate(e.target.value)} />
+                </div>
+                <textarea className="w-full bg-slate-50 border-none rounded-2xl p-4 h-24 focus:ring-2 focus:ring-amber-500/20 outline-none resize-none" placeholder="הדבק כאן את הטקסט החופשי מהסיכום..." value={summaryText} onChange={e => setSummaryText(e.target.value)} />
                 <div className="mt-4 flex justify-end">
                   <button onClick={handleCreateSummary} disabled={loading} className="bg-black text-white px-8 py-3 rounded-xl font-bold hover:scale-105 transition-all shadow-lg shadow-black/20">
-                    {loading ? 'מנתח...' : 'ייצר משימות'}
+                    {loading ? 'מנתח...' : 'ייצר משימות מסיכום'}
                   </button>
                 </div>
               </section>
 
-              <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col gap-4">
+              <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col gap-3">
+                <h3 className="text-sm font-bold text-gray-800 mb-1 flex items-center gap-2"><BarChart2 className="w-4 h-4 text-gray-500"/> בקרה וסינון</h3>
+                {/* FIX 3: החזרת הסינונים לפי אחראי ומטפל */}
+                <div className="flex gap-2">
+                  <input type="text" placeholder="חיפוש אחראי..." className="w-full bg-slate-50 border border-gray-100 rounded-xl p-2.5 text-sm outline-none focus:border-amber-500" onChange={e => setFilters({...filters, owner: e.target.value})} />
+                  <input type="text" placeholder="חיפוש מטפל..." className="w-full bg-slate-50 border border-gray-100 rounded-xl p-2.5 text-sm outline-none focus:border-amber-500" onChange={e => setFilters({...filters, currentHandler: e.target.value})} />
+                </div>
+                
+                {/* FIX 10: הוספת סטטוס done לפילטר */}
                 <select className="w-full bg-slate-50 border-none rounded-xl p-3 outline-none font-bold text-sm" onChange={e => setFilters({...filters, status: e.target.value})}>
-                  <option value="">כל המשימות</option>
+                  <option value="">כל הסטטוסים</option>
                   <option value="open">פתוחות</option>
                   <option value="in_progress">בטיפול</option>
                   <option value="paused">בהשהייה</option>
+                  <option value="done">בוצעו</option>
                 </select>
-                <button onClick={exportToCSV} className="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-700 transition-all"><Download className="w-4 h-4" /> CSV ייצוא</button>
+                <button onClick={exportToCSV} className="w-full bg-emerald-600 text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-700 transition-all mt-auto"><Download className="w-4 h-4" /> ייצוא CSV</button>
               </section>
             </div>
 
@@ -258,7 +286,10 @@ function App() {
                             <button onClick={() => setEditingTask(task)} className="p-2 bg-slate-50 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-all"><Edit3 className="w-4 h-4" /></button>
                             <button onClick={() => deleteTask(task.id)} className="p-2 bg-slate-50 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"><Trash2 className="w-4 h-4" /></button>
                           </div>
-                          <div className="text-[10px] font-bold text-gray-400 bg-slate-50 px-2 py-1 rounded-md">{task.owner}</div>
+                          <div className="text-right">
+                             <div className="text-[10px] font-bold text-gray-400">אחראי: {task.owner}</div>
+                             {task.currentHandler && <div className="text-[10px] font-bold text-blue-500">מטפל: {task.currentHandler}</div>}
+                          </div>
                         </div>
                       </div>
                     ))}
